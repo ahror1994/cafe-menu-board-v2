@@ -84,25 +84,30 @@ export default function Admin() {
   }
 
   async function handleSave() {
+    clearTimeout(pushTimer.current);
     saveStore(storeRef.current);
     if (!hasToken()) {
       setShowCloudPanel(true);
-      setConnectMsg('Сначала подключи облако: вставь ссылку из «ПОДКЛЮЧЕНИЕ-меню.txt» (или токен) и нажми OK.');
-      alert('Внимание: Облако не подключено!\n\nВаши правки сохранены в браузере, но чтобы они появились на телевизорах, вставьте токен в блоке «☁ Облако» слева.');
+      setConnectMsg('Сначала подключи облако: вставь ссылку или токен в поле ниже и нажми OK.');
+      alert('⚠️ Внимание: Облако не подключено!\n\nВаши изменения сохранены локально в этом браузере, но НЕ отправлены на телевизоры.\n\nПожалуйста, вставьте токен в блоке «☁ Облако» слева (или перейдите по персональной ссылке администратора с токеном), чтобы телевизоры увидели ваши новые плашки!');
       return;
     }
+    if (pushingRef.current) return;
+    pushingRef.current = true;
     setIsSaving(true);
     setSaveNotice('');
     try {
       const at = await pushCloud(storeRef.current);
       cacheStore(storeRef.current, Date.parse(at) || Date.now());
+      dirtyRef.current = false;
       setCloud({ s: 'ok', at });
-      setSaveNotice('✓ Успешно сохранено в облако! На всех ТВ обновится через несколько секунд.');
+      setSaveNotice('✓ Успешно сохранено в облако! На всех 6 ТВ обновится через несколько секунд.');
       setTimeout(() => setSaveNotice(''), 7000);
     } catch (e) {
       setCloud({ s: 'err', msg: String(e.message || e) });
       alert('Ошибка при отправке в облако: ' + (e.message || e));
     } finally {
+      pushingRef.current = false;
       setIsSaving(false);
     }
   }
@@ -124,6 +129,7 @@ export default function Admin() {
           try {
             const at = await pushCloud(storeRef.current);
             cacheStore(storeRef.current, Date.parse(at) || Date.now());
+            dirtyRef.current = false;
             setCloud({ s: 'ok', at });
           } catch (e) {
             setCloud({ s: 'err', msg: String(e.message || e) });
@@ -149,12 +155,17 @@ export default function Admin() {
     }
   }
 
-  // один раз при открытии: импорт токена из ссылки-подключения (#gh=...) + синк с облаком
+  // один раз при открытии: импорт токена из ссылки-подключения (#gh=... или ?gh=...) + синк с облаком
   useEffect(() => {
-    const m = (window.location.hash || '').match(/[#&]gh=([A-Za-z0-9._-]+)/);
+    const raw = window.location.href;
+    const m = raw.match(/[#&?]gh=([A-Za-z0-9._-]+)/);
     if (m) {
-      setToken(decodeURIComponent(m[1]));
-      try { history.replaceState(null, '', window.location.pathname + window.location.search + '#/admin'); } catch {}
+      const t = decodeURIComponent(m[1]);
+      setToken(t);
+      try {
+        const cleanUrl = window.location.pathname + window.location.search.replace(/[?&]gh=[^&#]+/, '') + '#/admin';
+        history.replaceState(null, '', cleanUrl);
+      } catch {}
     }
     initialSync();
     return () => { syncStarted.current = false; };
@@ -179,14 +190,22 @@ export default function Admin() {
     if (!t) return;
     setConnectMsg('проверяю токен…');
     try {
-      const login = await checkToken();
+      const login = await checkToken(t);
       setToken(t);
-      setConnectMsg('✓ Токен работает, аккаунт: ' + login);
+      setConnectMsg('✓ Токен подключен, аккаунт: ' + login);
       setTokenInput('');
-      await initialSync();
+      setCloud({ s: 'push' });
+      try {
+        const at = await pushCloud(storeRef.current);
+        cacheStore(storeRef.current, Date.parse(at) || Date.now());
+        dirtyRef.current = false;
+        setCloud({ s: 'ok', at });
+        setSaveNotice('✓ Облако подключено! Все данные сохранены и переданы на ТВ.');
+        setTimeout(() => setSaveNotice(''), 7000);
+      } catch {
+        setCloud({ s: 'ok' });
+      }
     } catch (e) {
-      setToken('');
-      setCloud({ s: 'no' });
       setConnectMsg(netErrText(e));
     }
   }
@@ -197,8 +216,6 @@ export default function Admin() {
       const login = await checkToken();
       setConnectMsg('✓ Токен работает, аккаунт: ' + login);
     } catch (e) {
-      setToken('');
-      setCloud({ s: 'no' });
       setConnectMsg(netErrText(e));
     }
   }
@@ -367,6 +384,20 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-[#0f0f10] text-zinc-100 flex flex-col">
+      {!hasToken() && (
+        <div className="bg-amber-500/20 border-b border-amber-500/40 text-amber-200 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">⚠️</span>
+            <div>
+              <div className="font-bold text-amber-100">Облако не подключено — изменения сохраняются только в этом браузере!</div>
+              <div className="text-xs text-amber-300/80">Телевизоры и другие устройства не увидят ваши плашки, пока не подключено облако. Вставьте токен в блоке слева или откройте ссылку администратора с токеном.</div>
+            </div>
+          </div>
+          <button onClick={() => { setShowCloudPanel(true); document.getElementById('cloud-box')?.scrollIntoView({ behavior: 'smooth' }); }} className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold text-xs rounded-xl transition shadow whitespace-nowrap">
+            Подключить облако
+          </button>
+        </div>
+      )}
       {cloudNewer && (
         <div className="bg-amber-400 text-zinc-900 px-6 py-2.5 text-sm font-semibold flex flex-wrap items-center justify-between gap-2">
           <span>⚠ В облаке данные новее ({fmtTime(cloudNewer)}). Если правок в этой вкладке не делал — забери их, иначе следующее сохранение перезапишет облако старой копией.</span>
@@ -443,7 +474,7 @@ export default function Admin() {
           )}
 
           {/* ---- облако ---- */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 flex flex-col gap-2 text-xs">
+          <div id="cloud-box" className={`rounded-xl border transition-all p-3 flex flex-col gap-2 text-xs ${!hasToken() || showCloudPanel ? 'border-amber-500/60 bg-amber-500/10 shadow-lg ring-1 ring-amber-500/30' : 'border-zinc-800 bg-zinc-900'}`}>
             <div className="flex items-center justify-between">
               <span className="font-semibold tracking-wide">☁ Облако — все устройства</span>
               {hasToken() ? <span className="text-emerald-400 font-bold">подключено ✓</span> : <span className="text-amber-400 font-bold">не подключено</span>}

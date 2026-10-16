@@ -26,16 +26,18 @@ export function setToken(t) {
   } catch {}
 }
 
-// принимает и голый токен, и целую ссылку-подключение (#gh=...)
+// принимает и голый токен, и целую ссылку-подключение (#gh=... / ?gh=...)
 export function normalizeTokenInput(raw) {
   const s = String(raw || '').trim();
-  const m = s.match(/gh=([A-Za-z0-9._-]+)/);
+  const m = s.match(/[#&?]gh=([A-Za-z0-9._-]+)/) || s.match(/gh=([A-Za-z0-9._-]+)/);
   return m ? m[1] : s;
 }
 
 // мгновенная проверка: работает ли токен (возвращает логин аккаунта)
-export async function checkToken() {
-  const u = await gh('/user');
+export async function checkToken(customToken) {
+  const t = customToken ? normalizeTokenInput(customToken) : getToken();
+  if (!t) throw new Error('Токен не указан');
+  const u = await gh('/user', 'GET', null, t);
   return u && u.login ? String(u.login) : 'ok';
 }
 export function hasToken() { return Boolean(getToken()); }
@@ -94,12 +96,13 @@ async function fetchStable(url, opts, tries = 3) {
   throw lastErr;
 }
 
-async function gh(path, method = 'GET', body) {
+async function gh(path, method = 'GET', body, customToken) {
+  const token = customToken || getToken();
   try {
     const res = await fetchStable(`${API}${path}`, {
       method,
       headers: {
-        Authorization: `Bearer ${getToken()}`,
+        Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
         ...(body ? { 'Content-Type': 'application/json' } : {}),
