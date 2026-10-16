@@ -7,7 +7,7 @@ import GlassPill from '../components/GlassPill';
 import DisplacementTransition from '../components/DisplacementTransition';
 
 // метка версии сборки — видна в верхней полосе ТВ, чтобы понимать: свежая версия или кэш
-const APP_VERSION = '2026-09-28.3';
+const APP_VERSION = '2026-10-16.2';
 
 const variants = {
   fade: { initial: { opacity: 0, scale: 1.04, filter: 'blur(6px)' }, animate: { opacity: 1, scale: 1, filter: 'blur(0px)' }, exit: { opacity: 0, scale: 0.98, filter: 'blur(6px)' } },
@@ -52,7 +52,7 @@ export default function TvPlayer() {
   const [idx, setIdx] = useState(0);
   const [disp, setDisp] = useState(null); // {fromBg, toBg, key}
   const timerRef = useRef(null);
-  const screen = store.screens.find((s) => s.id === id) || store.screens[0];
+  const screen = store.screens.find((s) => s.id === id);
   const slides = screen?.slides?.length ? screen.slides : [];
 
   const goNext = useCallback((nextIdx) => {
@@ -69,26 +69,32 @@ export default function TvPlayer() {
     }
   }, [slides, idx]);
 
-  // локальные изменения (другая вкладка): перечитываем ТОЛЬКО если данные реально
-  // поменялись — иначе каждый setStore создаёт новый объект и сбрасывает таймер слайдов
+  // локальные изменения (другая вкладка): перечитываем в реальном времени
   const lastLocalTs = useRef('');
   useEffect(() => {
-    const onStorage = (e) => { if (e.key?.startsWith('cafe-menu')) { lastLocalTs.current = ''; setStore(loadStore()); } };
+    const onStorage = (e) => {
+      if (e.key === 'sushi-ordo-menu-v2' || e.key?.startsWith('cafe-menu')) {
+        lastLocalTs.current = '';
+        setStore(loadStore());
+      }
+    };
     window.addEventListener('storage', onStorage);
     const iv = setInterval(() => {
       let ts = '';
-      try { ts = localStorage.getItem('cafe-menu-v3_ts') || ''; } catch {}
+      try {
+        ts = localStorage.getItem('sushi-ordo-menu-v2_ts') || localStorage.getItem('cafe-menu-v3_ts') || '';
+      } catch {}
       if (ts === lastLocalTs.current) return;
       lastLocalTs.current = ts;
       setStore(loadStore());
-    }, 2000);
+    }, 1000);
     return () => { window.removeEventListener('storage', onStorage); clearInterval(iv); };
   }, []);
 
-  // облако: подтягиваем свежие данные сами (кэш браузера сводит трафик к дешёвым проверкам)
+  // облако: подтягиваем свежие данные с bust=true (?t=...), без зависания в кэше Fastly CDN
   const lastCloud = useRef('');
   const pollCloud = useCallback(async () => {
-    const cloud = await fetchCloud(30000, false);
+    const cloud = await fetchCloud(10000, true);
     if (!cloud?.updatedAt || cloud.updatedAt === lastCloud.current) return;
     lastCloud.current = cloud.updatedAt;
     setStore(cloud.data);
@@ -96,7 +102,7 @@ export default function TvPlayer() {
   }, []);
   useEffect(() => {
     pollCloud();
-    const iv = setInterval(pollCloud, 60000);
+    const iv = setInterval(pollCloud, 5000);
     const onVis = () => { if (document.visibilityState !== 'hidden') pollCloud(); };
     document.addEventListener('visibilitychange', onVis);
     window.addEventListener('online', pollCloud);
@@ -152,7 +158,25 @@ export default function TvPlayer() {
     }
   }
 
-  if (!slides.length) return <div className="w-screen h-screen grid place-items-center text-white/60">Нет слайдов — добавь в /admin</div>;
+  if (!screen) {
+    return (
+      <div className="w-screen h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6 gap-3 select-none">
+        <div className="px-3 py-1 rounded-full bg-red-600/20 text-red-400 border border-red-500/30 text-xs font-bold">Суши ORDO</div>
+        <h1 className="text-xl font-bold">Экран «{id}» не найден</h1>
+        <p className="text-zinc-400 text-sm">Проверьте список экранов в админке /admin</p>
+      </div>
+    );
+  }
+
+  if (!slides.length) {
+    return (
+      <div className="w-screen h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6 gap-4 select-none">
+        <div className="px-3 py-1 rounded-full bg-red-600/20 text-red-400 border border-red-500/30 text-xs font-bold">Суши ORDO</div>
+        <h1 className="text-2xl font-bold">{screen.name} ({screen.id.toUpperCase()})</h1>
+        <p className="text-zinc-400 text-sm">Экран подключен и ожидает слайды. Добавьте слайд в админке: <a href="#/admin" className="text-white underline font-semibold">/admin</a></p>
+      </div>
+    );
+  }
   const current = slides[idx];
 
   const useFramer = !disp;

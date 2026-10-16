@@ -43,14 +43,14 @@ const RAW_DEFAULT = {
       name: 'Экран 1',
       slides: [
         {
-          id: 's1',
+          id: 's_tv1_1',
           type: 'image',
-          bg: '/cafe-menu-board-v2/data/img/tv1-01.jpg',
+          bg: '/cafe-menu-board-v2/data/img/tv2-12.jpg',
           duration: 20,
           transition: 'fade',
           items: [
-            { title: 'Грек салаты', desc: 'Помидор, бадыраң, сыр Фетта', price: '350.-', x: 5, y: 10, w: 23 },
-            { title: 'Цезарь салаты', desc: 'Айсберг, соус цезарь, тоок эти', price: '350.-', x: 6, y: 68, w: 23 },
+            { title: 'Морской бриз', desc: '', price: '777 с.', x: 3, y: 17, w: 14 },
+            { title: 'Лосось Манго', desc: '', price: '497 с.', x: 82, y: 9, w: 14 },
           ],
         },
       ],
@@ -60,14 +60,15 @@ const RAW_DEFAULT = {
       name: 'Экран 2',
       slides: [
         {
-          id: 's2',
+          id: 's_tv2_1',
           type: 'image',
-          bg: '/cafe-menu-board-v2/data/img/tv2-01.jpg',
+          bg: '/cafe-menu-board-v2/data/img/tv3-01.jpg',
           duration: 20,
           transition: 'fade',
           items: [
-            { title: 'Маргарита 30/40', desc: '', price: '380/500.-', x: 25, y: 25, w: 18 },
-            { title: 'Пепперони 30/40', desc: '', price: '400/600.-', x: 60, y: 25, w: 18 },
+            { title: 'Кани Маки', desc: 'Краб, рис, нори', price: '130.-', x: 6, y: 28, w: 16 },
+            { title: 'Саке Маки', desc: 'Лосось, рис, нори', price: '200.-', x: 28, y: 46, w: 16 },
+            { title: 'Унаги Маки', desc: 'Угорь, унаги, кунжут', price: '230.-', x: 74, y: 68, w: 16 },
           ],
         },
       ],
@@ -77,14 +78,15 @@ const RAW_DEFAULT = {
       name: 'Экран 3',
       slides: [
         {
-          id: 's3',
+          id: 's_tv3_1',
           type: 'image',
-          bg: '/cafe-menu-board-v2/data/img/tv3-01.jpg',
+          bg: '/cafe-menu-board-v2/data/img/tv3-02.jpg',
           duration: 20,
           transition: 'fade',
           items: [
-            { title: 'Филадельфия', desc: 'Лосось, сливочный сыр', price: '420.-', x: 10, y: 30, w: 20 },
-            { title: 'Калифорния', desc: 'Краб, авокадо, тобико', price: '340.-', x: 60, y: 30, w: 20 },
+            { title: 'Калифорния Тобико', desc: 'Снежный краб, авокадо', price: '340.-', x: 2, y: 76, w: 18 },
+            { title: 'Калифорния Маки', desc: 'Классический крабовый ролл', price: '330.-', x: 60, y: 76, w: 18 },
+            { title: 'Сливочный угорь', desc: 'Нежный сыр, угорь, унаги', price: '390.-', x: 6, y: 38, w: 18 },
           ],
         },
       ],
@@ -94,14 +96,14 @@ const RAW_DEFAULT = {
       name: 'Экран 4',
       slides: [
         {
-          id: 's4',
+          id: 's_tv4_1',
           type: 'image',
-          bg: '/cafe-menu-board-v2/data/img/tv1-02.jpg',
+          bg: '/cafe-menu-board-v2/data/img/tv2-08.jpg',
           duration: 20,
           transition: 'fade',
           items: [
-            { title: 'Сет Самурай', desc: 'Ассорти роллов', price: '1300.-', x: 10, y: 40, w: 24 },
-            { title: 'Сет Темпура', desc: 'Горячие роллы', price: '1500.-', x: 60, y: 40, w: 24 },
+            { title: 'Сет Дабл', desc: 'Большой набор для двоих', price: '1430.-', x: 4, y: 78, w: 26 },
+            { title: 'Сет Темпура', desc: 'Хрустящие горячие роллы', price: '1500.-', x: 66, y: 44, w: 26 },
           ],
         },
       ],
@@ -111,14 +113,14 @@ const RAW_DEFAULT = {
       name: 'Экран 5',
       slides: [
         {
-          id: 's5',
+          id: 's_tv5_1',
           type: 'image',
-          bg: '/cafe-menu-board-v2/data/img/tv2-05.jpg',
+          bg: '/cafe-menu-board-v2/data/img/tv2-10.jpg',
           duration: 20,
           transition: 'fade',
           items: [
-            { title: 'Чиккен Бургер', desc: 'Сочное филе, соус', price: '360.-', x: 15, y: 40, w: 22 },
-            { title: 'Чизбургер', desc: 'Говядина, сыр чеддер', price: '400.-', x: 60, y: 40, w: 22 },
+            { title: 'Сет Самурай', desc: 'Фирменный набор роллов', price: '1300.-', x: 74, y: 16, w: 22 },
+            { title: 'Филадельфия Макси', desc: 'Много свежего лосося', price: '1610.-', x: 6, y: 12, w: 24 },
           ],
         },
       ],
@@ -128,14 +130,14 @@ const RAW_DEFAULT = {
       name: 'Экран 6',
       slides: [
         {
-          id: 's6',
+          id: 's_tv6_1',
           type: 'image',
-          bg: '/cafe-menu-board-v2/data/img/tv3-04.jpg',
+          bg: '/cafe-menu-board-v2/data/img/tv3-06.jpg',
           duration: 20,
           transition: 'fade',
           items: [
-            { title: 'Том Ям с креветками', desc: 'Острый суп', price: '500.-', x: 15, y: 40, w: 24 },
-            { title: 'Рамен с говядиной', desc: 'Насыщенный бульон', price: '350.-', x: 60, y: 40, w: 24 },
+            { title: 'Унаги Фьюжн', desc: 'Запеченный угорь, спайси', price: '420.-', x: 32, y: 80, w: 18 },
+            { title: 'Яки Унаги маки', desc: 'Горячий запеченный ролл', price: '370.-', x: 78, y: 80, w: 18 },
           ],
         },
       ],
@@ -145,9 +147,9 @@ const RAW_DEFAULT = {
 
 export function normalizeStore(raw) {
   if (!raw || !raw.screens) return normalizeStore(RAW_DEFAULT);
-  const screens = raw.screens.map((sc) => ({
+  const screens = (raw.screens || []).map((sc) => ({
     id: sc.id,
-    name: sc.name,
+    name: sc.name || `Экран ${sc.id.replace('tv', '')}`,
     slides: (sc.slides || []).map((sl) => ({
       id: sl.id,
       type: sl.type || 'image',
@@ -157,6 +159,23 @@ export function normalizeStore(raw) {
       items: (sl.items || []).map((it, idx) => normalizeItem(it, idx)),
     })),
   }));
+
+  // Гарантируем наличие всех 6 экранов (tv1 .. tv6)
+  for (let i = 1; i <= 6; i++) {
+    const id = `tv${i}`;
+    if (!screens.some((s) => s.id === id)) {
+      const defSc = RAW_DEFAULT.screens.find((s) => s.id === id);
+      screens.push(defSc ? structuredClone(defSc) : { id, name: `Экран ${i}`, slides: [] });
+    }
+  }
+
+  // Сортировка tv1 .. tv6
+  screens.sort((a, b) => {
+    const numA = parseInt(a.id.replace(/\D/g, '')) || 0;
+    const numB = parseInt(b.id.replace(/\D/g, '')) || 0;
+    return numA - numB;
+  });
+
   return { screens };
 }
 
