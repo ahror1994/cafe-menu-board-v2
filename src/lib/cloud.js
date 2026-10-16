@@ -40,32 +40,34 @@ export async function checkToken() {
 }
 export function hasToken() { return Boolean(getToken()); }
 
-// публичная ссылка на данные (отдаются вместе с сайтом)
 export function cloudFileUrl() { return `${import.meta.env.BASE_URL}${PATH}`; }
 
-// bust=true — всегда свежая копия (админка); bust=false — кэш браузера с дешёвой
-// перепроверкой по ETag (ТВ: изменение приходит само, без лишнего трафика)
+const RAW_URL = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${PATH}`;
+
+// Запрашивает актуальные данные. При bust=true пробует raw.githubusercontent.com
+// (обновляется за 1 секунду) и GitHub Pages с защитой от кэширования (?t=Date.now())
 export async function fetchCloud(timeoutMs = 8000, bust = true) {
-  let lastErr;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  const urls = bust
+    ? [`${RAW_URL}?t=${Date.now()}`, `${cloudFileUrl()}?t=${Date.now()}`]
+    : [cloudFileUrl(), RAW_URL];
+
+  for (const url of urls) {
     try {
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), timeoutMs);
-      const res = await fetchStable(bust ? `${cloudFileUrl()}?t=${Date.now()}` : cloudFileUrl(), {
+      const res = await fetchStable(url, {
         cache: bust ? 'no-store' : 'default',
         signal: ctrl.signal,
-      });
+      }, 1);
       clearTimeout(t);
-      if (!res.ok) return null;
+      if (!res.ok) continue;
       const j = await res.json();
-      if (!j || !j.data || !Array.isArray(j.data.screens)) return null;
+      if (!j || !j.data || !Array.isArray(j.data.screens)) continue;
       return { updatedAt: j.updatedAt || '', data: normalizeStore(j.data) };
-    } catch (e) {
-      lastErr = e;
-      if (attempt < 1) await new Promise((r) => setTimeout(r, 800));
+    } catch {
+      // пробуем следующий URL
     }
   }
-  void lastErr;
   return null;
 }
 

@@ -21,6 +21,8 @@ export default function Admin() {
   const [showCloudPanel, setShowCloudPanel] = useState(false);
   const [tokenInput, setTokenInput] = useState('');
   const [connectMsg, setConnectMsg] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveNotice, setSaveNotice] = useState('');
   const storeRef = useRef(store);
   const dirtyRef = useRef(false); // редактировали в этой сессии
   const firstRun = useRef(true);
@@ -81,35 +83,67 @@ export default function Admin() {
     }
   }
 
+  async function handleSave() {
+    saveStore(storeRef.current);
+    if (!hasToken()) {
+      setShowCloudPanel(true);
+      setConnectMsg('Сначала подключи облако: вставь ссылку из «ПОДКЛЮЧЕНИЕ-меню.txt» (или токен) и нажми OK.');
+      alert('Внимание: Облако не подключено!\n\nВаши правки сохранены в браузере, но чтобы они появились на телевизорах, вставьте токен в блоке «☁ Облако» слева.');
+      return;
+    }
+    setIsSaving(true);
+    setSaveNotice('');
+    try {
+      const at = await pushCloud(storeRef.current);
+      cacheStore(storeRef.current, Date.parse(at) || Date.now());
+      setCloud({ s: 'ok', at });
+      setSaveNotice('✓ Успешно сохранено в облако! На всех ТВ обновится через несколько секунд.');
+      setTimeout(() => setSaveNotice(''), 7000);
+    } catch (e) {
+      setCloud({ s: 'err', msg: String(e.message || e) });
+      alert('Ошибка при отправке в облако: ' + (e.message || e));
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function initialSync() {
     if (syncStarted.current) return;
     syncStarted.current = true;
     wipeOldKeys();
     setCloud({ s: 'check' });
     const token = getToken();
-    const cloudRes = await fetchCloud(15000);
+    const cloudRes = await fetchCloud(15000, true);
     const lt = localTs();
     if (cloudRes) {
       const ct = Date.parse(cloudRes.updatedAt) || 0;
-      if (lt > ct + 2000) {
-        // в этом браузере правки новее облака — выгружаем
+      // Если локальные правки новее облака — никогда не затираем!
+      if (lt > ct) {
         if (token) {
           setCloud({ s: 'push' });
-          try { const at = await pushCloud(storeRef.current); setCloud({ s: 'ok', at }); }
-          catch (e) { setCloud({ s: 'err', msg: String(e.message || e) + ' — вставь ссылку из «ПОДКЛЮЧЕНИЕ-меню.txt» заново' }); }
-        } else setCloud({ s: 'newerLocal' });
-      } else {
-        // облако актуальнее или то же — забираем
+          try {
+            const at = await pushCloud(storeRef.current);
+            cacheStore(storeRef.current, Date.parse(at) || Date.now());
+            setCloud({ s: 'ok', at });
+          } catch (e) {
+            setCloud({ s: 'err', msg: String(e.message || e) });
+          }
+        } else {
+          setCloud({ s: 'newerLocal' });
+        }
+      } else if (ct > lt + 3000) {
+        // Облако новее локального кэша более чем на 3 секунды
         if (!dirtyRef.current) {
           skipSync.current = true;
           setStore(cloudRes.data);
           cacheStore(cloudRes.data, ct);
         }
         setCloud({ s: 'ok', at: cloudRes.updatedAt });
+      } else {
+        setCloud({ s: 'ok', at: cloudRes.updatedAt });
       }
     } else if (token) {
-      setCloud({ s: 'push' });
-      try { const at = await pushCloud(storeRef.current); setCloud({ s: 'ok', at }); } catch (e) { setCloud({ s: 'err', msg: String(e.message || e) }); }
+      setCloud({ s: 'ok' });
     } else {
       setCloud({ s: 'no' });
     }
@@ -347,7 +381,7 @@ export default function Admin() {
           </div>
           <div className="flex gap-2 items-center">
             {cloudChip}
-            <button onClick={() => { clearMenuKeys(); location.reload(); }} title="Стереть локальную копию и взять свежую из облака" className="px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm border border-zinc-700">⟳ Обновить данные</button>
+            <button onClick={async () => { if (!confirm('Синхронизировать с облаком? Если есть несохранённые локальные правки, они заменятся данными из облака.')) return; await manualPull(); }} title="Загрузить свежие данные из облака" className="px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm border border-zinc-700">⟳ Загрузить из облака</button>
             <Link to={`/tv/${activeScreenId}`} target="_blank" className="px-4 py-2 rounded-xl bg-white text-zinc-900 font-semibold text-sm hover:bg-zinc-100">Открыть ТВ ▶</Link>
           </div>
         </div>
@@ -618,9 +652,27 @@ export default function Admin() {
                 </section>
               </div>
 
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 flex items-center justify-between gap-4">
-                <div className="text-sm text-zinc-400">Сохраняется автоматически: в этом браузере сразу, в облако — через ~4 сек после последней правки. На ТВ обновится само (до 10 мин, обычно быстрее).</div>
-                <button onClick={() => { saveStore(store); doPush(); }} className="px-5 py-2.5 rounded-xl bg-emerald-500 text-zinc-900 font-bold hover:bg-emerald-400">Сохранить</button>
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 flex flex-wrap items-center justify-between gap-4">
+                <div className="text-sm text-zinc-400">
+                  {saveNotice ? (
+                    <span className="text-emerald-400 font-semibold">{saveNotice}</span>
+                  ) : isSaving ? (
+                    <span className="text-sky-400 font-semibold animate-pulse">⏳ Сохраняю и отправляю в облако...</span>
+                  ) : (
+                    <span>Сохраняется локально сразу, в облако — автоматически через 4 сек или по кнопке «Сохранить». На ТВ обновится за 3–5 секунд.</span>
+                  )}
+                </div>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className={`px-6 py-3 rounded-xl font-bold transition flex items-center gap-2 ${
+                    isSaving
+                      ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
+                      : 'bg-emerald-500 text-zinc-900 hover:bg-emerald-400 shadow-lg'
+                  }`}
+                >
+                  {isSaving ? '⏳ Сохраняю...' : '💾 Сохранить'}
+                </button>
               </div>
             </>
           )}

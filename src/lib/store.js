@@ -194,8 +194,12 @@ export function wipeOldKeys() {
 }
 
 export function saveStore(data) {
-  localStorage.setItem(KEY, JSON.stringify(data));
-  localStorage.setItem(KEY + '_ts', Date.now().toString());
+  try {
+    localStorage.setItem(KEY, JSON.stringify(data));
+    localStorage.setItem(KEY + '_ts', Date.now().toString());
+  } catch (e) {
+    console.warn('localStorage save warning:', e);
+  }
 }
 
 // время последней правки на этом устройстве (0 = здесь не редактировали)
