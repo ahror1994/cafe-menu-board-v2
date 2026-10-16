@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const REPO = 'ahror1994/cafe-menu-board';
+const REPO = 'ahror1994/cafe-menu-board-v2';
 const BRANCH = 'gh-pages';
 const API = `https://api.github.com/repos/${REPO}`;
 

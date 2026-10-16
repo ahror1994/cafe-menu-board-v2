@@ -4,6 +4,6 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/cafe-menu-board/',
+  base: '/cafe-menu-board-v2/',
   plugins: [react(), tailwindcss()],
 })

@@ -18,14 +18,23 @@ const variants = {
   pixel: { initial: { opacity: 0, filter: 'blur(10px) contrast(1.5)' }, animate: { opacity: 1, filter: 'blur(0px) contrast(1)' }, exit: { opacity: 0, filter: 'blur(12px)' } },
 };
 
+function resolveBg(bg) {
+  if (!bg) return '';
+  if (bg.startsWith('/cafe-menu-board/')) {
+    return bg.replace('/cafe-menu-board/', import.meta.env.BASE_URL);
+  }
+  return bg;
+}
+
 function Slide({ slide }) {
   const isVideo = slide.type === 'video';
+  const bg = resolveBg(slide.bg);
   return (
     <div className="absolute inset-0 overflow-hidden bg-black" style={{ perspective: 1200 }}>
       {isVideo ? (
-        <video src={slide.bg} autoPlay muted loop playsInline preload="auto" className="absolute inset-0 w-full h-full object-cover" />
+        <video src={bg} autoPlay muted loop playsInline preload="auto" className="absolute inset-0 w-full h-full object-cover" />
       ) : (
-        <motion.img src={slide.bg} alt="" className="absolute inset-0 w-full h-full object-cover" initial={{ scale: 1.08 }} animate={{ scale: 1 }} transition={{ duration: slide.duration + 1, ease: 'linear' }} />
+        <motion.img src={bg} alt="" className="absolute inset-0 w-full h-full object-cover" initial={{ scale: 1.08 }} animate={{ scale: 1 }} transition={{ duration: slide.duration + 1, ease: 'linear' }} />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10 pointer-events-none" />
       {slide.items?.map((item, idx) => (
@@ -54,7 +63,7 @@ export default function TvPlayer() {
     // if either side is video, skip displacement (texture from video is messy)
     const needsTexture = useDisp && cur.type !== 'video' && nxt.type !== 'video';
     if (needsTexture) {
-      setDisp({ from: cur.bg, to: nxt.bg, pendingIdx: nextIdx, key: `${cur.id}->${nxt.id}-${Date.now()}` });
+      setDisp({ from: resolveBg(cur.bg), to: resolveBg(nxt.bg), pendingIdx: nextIdx, key: `${cur.id}->${nxt.id}-${Date.now()}` });
     } else {
       setIdx(nextIdx);
     }

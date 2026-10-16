@@ -342,7 +342,7 @@ export default function Admin() {
       <header className="sticky top-0 z-30 bg-zinc-900/80 backdrop-blur border-b border-zinc-800">
         <div className="max-w-[1480px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold tracking-tight">Cafe Menu Board — Админка</h1>
+            <h1 className="text-xl font-bold tracking-tight">Суши ORDO — Админка (версия 2)</h1>
             <p className="text-xs text-zinc-400">Figma-холст: тяни плашки мышкой куда хочешь → на ТВ будет 1-в-1. Данные живут в облаке — все устройства видят одно и то же.</p>
           </div>
           <div className="flex gap-2 items-center">

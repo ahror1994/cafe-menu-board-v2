@@ -4,7 +4,8 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-const LIVE = 'https://ahror1994.github.io/cafe-menu-board/data/menu.json';
+const REPO = 'ahror1994/cafe-menu-board-v2';
+const LIVE = `https://ahror1994.github.io/cafe-menu-board-v2/data/menu.json`;
 
 function run(cmd, args) {
   const r = spawnSync(cmd, args, { stdio: 'inherit', shell: true });
@@ -14,9 +15,9 @@ function run(cmd, args) {
 run('npx', ['vite', 'build']);
 
 // --- пронести живые данные облака через деплой (gh-pages заменяется целиком) ---
-async function ghApi(path) {
+async function ghApi(p) {
   const { execSync } = await import('node:child_process');
-  const out = execSync(`gh api "${path}"`, { maxBuffer: 64 * 1024 * 1024, encoding: 'utf8' });
+  const out = execSync(`gh api "${p}"`, { maxBuffer: 64 * 1024 * 1024, encoding: 'utf8' });
   return JSON.parse(out);
 }
 
@@ -33,17 +34,17 @@ try {
     console.log(`[deploy] в облаке ещё нет данных (${res.status}) — уйдёт seed из public/data`);
   }
   // 2) все файлы данных облака (data/img/*, data/video/* и т.д.)
-  const treeRes = await ghApi('repos/ahror1994/cafe-menu-board/git/trees/gh-pages?recursive=1');
+  const treeRes = await ghApi(`repos/${REPO}/git/trees/gh-pages?recursive=1`);
   const dataFiles = (treeRes.tree || []).filter((t) => t.type === 'blob' && t.path.startsWith('data/') && t.path !== 'data/menu.json');
   for (const t of dataFiles) {
     const dest = 'dist/' + t.path;
     mkdirSync(path.dirname(dest), { recursive: true });
-    const r = await fetch(`https://ahror1994.github.io/cafe-menu-board/${t.path}`);
+    const r = await fetch(`https://ahror1994.github.io/cafe-menu-board-v2/${t.path}`);
     if (r.ok) writeFileSync(dest, Buffer.from(await r.arrayBuffer()));
   }
   if (dataFiles.length) console.log(`[deploy] файлы облака перенесены: ${dataFiles.length} шт.`);
 } catch (e) {
-  console.warn('[deploy] не смог получить живые данные:', e.message);
+  console.warn('[deploy] инфо по живым данным облака:', e.message);
 }
 
 run('npx', ['gh-pages', '-d', 'dist']);

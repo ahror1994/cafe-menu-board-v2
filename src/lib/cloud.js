@@ -3,18 +3,27 @@
 // Запись — коммит через GitHub API, нужен токен (хранится только в браузере админа).
 import { normalizeStore } from './store.js';
 
-const REPO = 'ahror1994/cafe-menu-board';
+const REPO = 'ahror1994/cafe-menu-board-v2';
 const BRANCH = 'gh-pages';
 const PATH = 'data/menu.json';
-export const TOKEN_KEY = 'cafe-menu-gh-token';
+export const TOKEN_KEY = 'sushi-ordo-gh-token';
+const FALLBACK_TOKEN_KEY = 'cafe-menu-gh-token';
 
 const API = `https://api.github.com/repos/${REPO}`;
 
 export function getToken() {
-  try { return localStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; }
+  try { return localStorage.getItem(TOKEN_KEY) || localStorage.getItem(FALLBACK_TOKEN_KEY) || ''; } catch { return ''; }
 }
 export function setToken(t) {
-  try { localStorage.setItem(TOKEN_KEY, normalizeTokenInput(t)); } catch {}
+  try {
+    const val = normalizeTokenInput(t);
+    if (!val) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(FALLBACK_TOKEN_KEY);
+    } else {
+      localStorage.setItem(TOKEN_KEY, val);
+    }
+  } catch {}
 }
 
 // принимает и голый токен, и целую ссылку-подключение (#gh=...)
